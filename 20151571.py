@@ -1,9 +1,9 @@
 from bs4 import BeautifulSoup
-from urllib.request import urlopen
+import requests
 import urllib.error
+from lib_LocalFileAdapter import LocalFileAdapter
 import os
 class COLLECT_HREF:
-
     def __init__(self):
         self.pages = set()
         self.URLS = list()
@@ -11,16 +11,18 @@ class COLLECT_HREF:
         self.url = "/public_html/"
         self.full_url = self.file_url + self.url
         self.idx = 1
+        self.requests_session = requests.session()
+        self.requests_session.mount('file://',LocalFileAdapter())
 
     def crawling(self, url):
         if url in self.pages:
             pass
         try:
-            html = urlopen(self.full_url + url)
-            bsObj = BeautifulSoup(html, 'html.parser')
+            r = self.requests_session.get(self.full_url + url)
+            bsObj = BeautifulSoup(r.content, 'html.parser')
             self.URLS.append(url)
             with open("Output_" + "%04d"%(self.idx) + ".txt", "w") as fr:
-                print(bsObj.getText(), file = fr)
+                print(bsObj.getText(), file = fr, end = "")
                 self.idx += 1
             for Obj in bsObj.findAll("a"):
                 page = Obj["href"]
@@ -29,7 +31,7 @@ class COLLECT_HREF:
                 self.pages.add(page)
                 self.crawling(page)
 
-        except urllib.error.URLError as Error:
+        except:
             pass
             #print(Error)
     
